@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   detailsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
     width: '100%',
     maxWidth: 400,

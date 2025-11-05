@@ -7,14 +7,20 @@ const API_BASE_URL = 'http://localhost:3000/api';
 // Set to true for testing without backend
 const MOCK_MODE = true;
 
+// Counter to alternate between success and failed
+let scanCounter = 0;
+
 export const checkInReservation = async (qrData: string): Promise<ApiResponse> => {
   // Mock mode for testing
   if (MOCK_MODE) {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Simulate success for QR codes containing "TEST" or "SUCCESS"
-    if (qrData.includes('TEST') || qrData.includes('SUCCESS') || qrData.includes('123')) {
+    // Alternate between success and failed
+    scanCounter++;
+    const isSuccess = scanCounter % 2 === 1; // Odd = success, Even = failed
+    
+    if (isSuccess) {
       return {
         success: true,
         user: {
