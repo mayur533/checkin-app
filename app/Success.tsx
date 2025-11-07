@@ -10,6 +10,12 @@ export default function Success() {
   const route = useRoute<SuccessScreenRouteProp>();
   const navigation = useNavigation();
   const { message, attendedAt } = route.params;
+  const normalizedMessage = message?.toLowerCase?.() ?? '';
+  const isAlreadyCheckedIn = normalizedMessage.includes('already');
+
+  const gradientColors = isAlreadyCheckedIn
+    ? ['#facc15', '#f59e0b', '#d97706']
+    : ['#10b981', '#059669', '#047857'];
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -52,16 +58,16 @@ export default function Success() {
   }, [navigation]);
 
   return (
-    <LinearGradient
-      colors={['#10b981', '#059669', '#047857']}
-      style={styles.container}
-    >
+    <LinearGradient colors={gradientColors} style={styles.container}>
       <View style={styles.content}>
         {/* Animated Circle Background */}
         <Animated.View
           style={[
             styles.circleBackground,
             {
+              backgroundColor: isAlreadyCheckedIn
+                ? 'rgba(255, 255, 255, 0.35)'
+                : 'rgba(255, 255, 255, 0.3)',
               transform: [{ scale: scaleAnim }],
             },
           ]}
@@ -89,11 +95,20 @@ export default function Success() {
 
         {/* Success Message */}
         <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.successTitle}>Check-in Successful!</Text>
+          <Text style={[styles.successTitle, isAlreadyCheckedIn && styles.alreadyTitle]}>
+            {isAlreadyCheckedIn ? 'Already Checked In' : 'Check-in Successful!'}
+          </Text>
           
           {/* Details Card */}
           <View style={styles.detailsCard}>
-            <Text style={styles.messageText}>{message || 'Check-in successful'}</Text>
+            <Text
+              style={[
+                styles.messageText,
+                isAlreadyCheckedIn && styles.alreadyMessageText,
+              ]}
+            >
+              {message || (isAlreadyCheckedIn ? 'Already checked in' : 'Check-in successful')}
+            </Text>
             {attendedAt && (
               <Text style={styles.detailText}>
                 Checked in at: {new Date(attendedAt).toLocaleString()}
@@ -101,7 +116,9 @@ export default function Success() {
             )}
           </View>
 
-          <Text style={styles.welcomeText}>Welcome! Enjoy your visit.</Text>
+          <Text style={[styles.welcomeText, isAlreadyCheckedIn && styles.alreadySubtitle]}>
+            {isAlreadyCheckedIn ? 'Please verify with the event team if needed.' : 'Welcome! Enjoy your visit.'}
+          </Text>
         </Animated.View>
       </View>
     </LinearGradient>
@@ -147,6 +164,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
   },
+  alreadyTitle: {
+    color: '#1f2937',
+  },
   detailsCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 24,
@@ -167,6 +187,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+  alreadyMessageText: {
+    color: '#b45309',
+  },
   detailText: {
     fontSize: 16,
     color: '#374151',
@@ -180,6 +203,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
     marginTop: 10,
+  },
+  alreadySubtitle: {
+    color: '#1f2937',
   },
 });
 
