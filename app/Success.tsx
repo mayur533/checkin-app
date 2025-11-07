@@ -9,7 +9,7 @@ type SuccessScreenRouteProp = RouteProp<RootStackParamList, 'Success'>;
 export default function Success() {
   const route = useRoute<SuccessScreenRouteProp>();
   const navigation = useNavigation();
-  const { user } = route.params;
+  const { message, attendedAt } = route.params;
 
   // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -91,32 +91,12 @@ export default function Success() {
         <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
           <Text style={styles.successTitle}>Check-in Successful!</Text>
           
-          {/* User Details */}
+          {/* Details Card */}
           <View style={styles.detailsCard}>
-            <Text style={styles.userName}>{user.name}</Text>
-            {user.reservationId && (
+            <Text style={styles.messageText}>{message || 'Check-in successful'}</Text>
+            {attendedAt && (
               <Text style={styles.detailText}>
-                Reservation: {user.reservationId}
-              </Text>
-            )}
-            {user.date && (
-              <Text style={styles.detailText}>
-                Date: {user.date}
-              </Text>
-            )}
-            {user.time && (
-              <Text style={styles.detailText}>
-                Time: {user.time}
-              </Text>
-            )}
-            {user.email && (
-              <Text style={styles.detailText}>
-                Email: {user.email}
-              </Text>
-            )}
-            {user.phone && (
-              <Text style={styles.detailText}>
-                Phone: {user.phone}
+                Checked in at: {new Date(attendedAt).toLocaleString()}
               </Text>
             )}
           </View>
@@ -180,8 +160,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  userName: {
-    fontSize: 24,
+  messageText: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#047857',
     textAlign: 'center',

@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
 import { checkInReservation } from '../services/api';
+import { saveScanHistory } from '../services/history';
 
 interface CameraDevice {
   id: string;
@@ -31,25 +32,27 @@ export default function Scanner() {
     }
   }, [permission]);
 
+  const loadCameras = async () => {
+    try {
+      // Default cameras that are typically available
+      const cameras: CameraDevice[] = [
+        { id: 'back', name: 'Back Camera', type: 'back' },
+        { id: 'front', name: 'Front Camera', type: 'front' },
+      ];
+      
+      // Note: expo-camera doesn't directly expose external camera enumeration
+      // External cameras would need to be detected through native modules
+      // For now, we'll show the standard cameras
+      // In production, you might want to use a native module to detect external cameras
+      setAvailableCameras(cameras);
+    } catch (error) {
+      console.error('Error loading cameras:', error);
+      Alert.alert('Error', 'Failed to load cameras. Please try again.');
+    }
+  };
+
   // Load available cameras
   useEffect(() => {
-    const loadCameras = async () => {
-      try {
-        // Default cameras that are typically available
-        const cameras: CameraDevice[] = [
-          { id: 'back', name: 'Back Camera', type: 'back' },
-          { id: 'front', name: 'Front Camera', type: 'front' },
-        ];
-        
-        // Note: expo-camera doesn't directly expose external camera enumeration
-        // External cameras would need to be detected through native modules
-        // For now, we'll show the standard cameras
-        setAvailableCameras(cameras);
-      } catch (error) {
-        console.error('Error loading cameras:', error);
-      }
-    };
-
     if (permission?.granted) {
       loadCameras();
     }
@@ -104,15 +107,34 @@ export default function Scanner() {
     try {
       const response = await checkInReservation(data);
 
+      // Save to history
+      await saveScanHistory({
+        qrToken: data,
+        success: response.success,
+        message: response.message,
+        attendedAt: response.attendedAt,
+      });
+
       setLoading(false);
 
       if (response.success) {
-        navigation.navigate('Success', { user: response.user });
+        navigation.navigate('Success', { 
+          message: response.message,
+          attendedAt: response.attendedAt 
+        });
       } else {
         navigation.navigate('Failed', { message: response.message });
       }
     } catch (error) {
       setLoading(false);
+      
+      // Save failed scan to history
+      await saveScanHistory({
+        qrToken: data,
+        success: false,
+        message: 'An unexpected error occurred',
+      });
+      
       navigation.navigate('Failed', { message: 'An unexpected error occurred' });
     }
 
@@ -245,10 +267,18 @@ export default function Scanner() {
         animationType="slide"
         onRequestClose={() => setShowCameraModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCameraModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Camera</Text>
+              <Text style={styles.modalTitle}>Settings</Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setShowCameraModal(false)}
@@ -258,32 +288,61 @@ export default function Scanner() {
             </View>
             
             <ScrollView style={styles.cameraList}>
-              {availableCameras.map((camera) => (
+              {/* Camera Selection Section */}
+              <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Select Camera</Text>
+                  <TouchableOpacity
+                    style={styles.refreshButton}
+                    onPress={loadCameras}
+                  >
+                    <MaterialIcons name="refresh" size={20} color="#3b82f6" />
+                  </TouchableOpacity>
+                </View>
+                {availableCameras.map((camera) => (
+                  <TouchableOpacity
+                    key={camera.id}
+                    style={[
+                      styles.cameraOption,
+                      selectedCamera === camera.type && styles.cameraOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedCamera(camera.type);
+                      setShowCameraModal(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.cameraOptionText,
+                      selectedCamera === camera.type && styles.cameraOptionTextSelected,
+                    ]}>
+                      {camera.name}
+                    </Text>
+                    {selectedCamera === camera.type && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Scan History Section */}
+              <View style={[styles.sectionContainer, styles.lastSection]}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Scan History</Text>
+                </View>
                 <TouchableOpacity
-                  key={camera.id}
-                  style={[
-                    styles.cameraOption,
-                    selectedCamera === camera.type && styles.cameraOptionSelected,
-                  ]}
+                  style={styles.historyButton}
                   onPress={() => {
-                    setSelectedCamera(camera.type);
                     setShowCameraModal(false);
+                    navigation.navigate('History');
                   }}
                 >
-                  <Text style={[
-                    styles.cameraOptionText,
-                    selectedCamera === camera.type && styles.cameraOptionTextSelected,
-                  ]}>
-                    {camera.name}
-                  </Text>
-                  {selectedCamera === camera.type && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
+                  <MaterialIcons name="history" size={20} color="#fff" />
+                  <Text style={styles.historyButtonText}>View All Scans</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
             </ScrollView>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -420,13 +479,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '70%',
-    paddingBottom: 40,
-  },
+      modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingBottom: 20,
+        maxHeight: '90%',
+      },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -454,6 +513,7 @@ const styles = StyleSheet.create({
   },
   cameraList: {
     padding: 20,
+    paddingBottom: 0,
   },
   cameraOption: {
     flexDirection: 'row',
@@ -483,6 +543,44 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#10b981',
     fontWeight: '700',
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  lastSection: {
+    marginBottom: 0,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#eff6ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  historyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3b82f6',
+    borderRadius: 12,
+    padding: 16,
+  },
+  historyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

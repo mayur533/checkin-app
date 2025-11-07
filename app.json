@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "qr-checkin-app",
+    "name": "QR Checkin App",
     "slug": "qr-checkin-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,6 +19,8 @@
       }
     },
     "android": {
+      "package": "com.qrcheckinapp",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -27,7 +29,10 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA"
-      ]
+      ],
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResourcesInReleaseBuilds": true,
+      "usesCleartextTraffic": false
     },
     "plugins": [
       [
@@ -35,7 +40,8 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "web": {
       "favicon": "./assets/favicon.png",
@@ -45,6 +51,11 @@
       "enabled": false,
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c4252946-44d0-4175-8150-36be3ae84bce"
+      }
     }
   }
 }

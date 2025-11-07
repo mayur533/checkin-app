@@ -9,20 +9,35 @@ export interface UserData {
 
 export interface ApiSuccessResponse {
   success: true;
-  user: UserData;
-  message?: string;
+  message: string;
+  attendedAt?: string;
 }
 
 export interface ApiErrorResponse {
   success: false;
   message: string;
+  errors?: Array<{
+    msg: string;
+    param: string;
+    location: string;
+  }>;
 }
 
 export type ApiResponse = ApiSuccessResponse | ApiErrorResponse;
 
+export interface ScanHistoryItem {
+  id: string;
+  qrToken: string;
+  success: boolean;
+  message: string;
+  attendedAt?: string;
+  timestamp: string;
+}
+
 export type RootStackParamList = {
   Scanner: undefined;
-  Success: { user: UserData };
+  Success: { message: string; attendedAt?: string };
   Failed: { message: string };
+  History: undefined;
 };
 

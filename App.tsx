@@ -9,6 +9,7 @@ import { RootStackParamList } from './types';
 import Scanner from './app/Scanner';
 import Success from './app/Success';
 import Failed from './app/Failed';
+import History from './app/History';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -40,6 +41,10 @@ export default function App() {
           options={{
             gestureEnabled: false,
           }}
+        />
+        <Stack.Screen 
+          name="History" 
+          component={History}
         />
       </Stack.Navigator>
     </NavigationContainer>
